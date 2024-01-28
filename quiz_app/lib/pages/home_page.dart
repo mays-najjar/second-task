@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quiz_app/models/question_with_answer.dart';
 import 'package:quiz_app/utils/app_colors.dart';
+import 'package:quiz_app/widgets/answer_widget_item.dart';
+import 'package:quiz_app/widgets/congrats_widget.dart';
+import 'package:quiz_app/widgets/main_button.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -12,11 +15,15 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int questionIndex = 0;
   int score = 0;
+  int c = 1;
   bool isFinished = false;
+  bool isCorrect = false;
+  String? selectedAnswer;
   void answerQuestion() {
     debugPrint('Answer Chosen');
   }
 
+  int length = questionsWithAnswers.length;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,117 +35,96 @@ class _MyHomePageState extends State<MyHomePage> {
         //color of the bar at top
       ),*/
       body: SafeArea(
-        child: 
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-              // main for y axis, cross for x axis
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                if (!isFinished) ...[
-                  Text(
-                    questionsWithAnswers[questionIndex].question,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Answer and get points',
-                    style: TextStyle(
-                      color: AppColors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Column(
-                    children: questionsWithAnswers[questionIndex]
-                        .answers
-                        .map(
-                          (answer) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 9),
-                            child: answerButton(
-                              text: answer,
-                              onPressed: () {
-                                setState(() {
-                                  final questionObj =
-                                      questionsWithAnswers[questionIndex];
-                                  if (answer == questionObj.correctAnswer) {
-                                    score++;
-                                  }
-                                  if (questionIndex <
-                                      questionsWithAnswers.length - 1) {
-                                    questionIndex++;
-                                  } else {
-                                    isFinished = true;
-                                  }
-                                });
-                              },
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-                if (isFinished) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    height: 100,
-                    child: Center(
-                      child: Text(
-                        'Congrats! Your final score is $score / ${++questionIndex}',
+        child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: !isFinished
+                ? Column(
+                    // main for y axis, cross for x axis
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+
+                    children: [
+                      Text(
+                        questionsWithAnswers[questionIndex].question,
                         style: const TextStyle(
-                          decoration: TextDecoration.none,
                           fontSize: 24,
-                          color: Color.fromARGB(255, 104, 57, 31),
-                          fontFamily: 'Times New Roma',
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ),
-                  // Button to restart the quiz after it's finished
-                  ElevatedButton(
-                    onPressed: () {
+                      const SizedBox(height: 20),
+                      Text(
+                        'Step $c of $length',
+                        style: const TextStyle(
+                          color: AppColors.grey,
+                        ),
+                      ),
+                      Container(
+                        alignment: Alignment.topRight,
+                        height: .8,
+                        width: MediaQuery.of(context).size.width * c / 4,
+                        color: AppColors.pink,
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Answer and get points',
+                        style: TextStyle(
+                          color: AppColors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Column(
+                        children: questionsWithAnswers[questionIndex]
+                            .answers
+                            .map(
+                              (answer) => AnswerWidgetItem(
+                                answer: answer,
+                                isCorrect: isCorrect,
+                                selectedAnswer: selectedAnswer,
+                                onTap: () {
+                                  setState(() {
+                                    selectedAnswer = answer.text;
+                                  });
+                                },
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const Spacer(),
+                      MainButton(
+                          text: 'Next',
+                          onTap: () {
+                            setState(() {
+                              final questionObj =
+                                  questionsWithAnswers[questionIndex];
+                              if (selectedAnswer == questionObj.correctAnswer) {
+                                score++;
+                              }
+                              if (questionIndex <
+                                  questionsWithAnswers.length - 1) {
+                                questionIndex++;
+                                selectedAnswer = null;
+                                c++;
+                              } else {
+                                isFinished = true;
+                              }
+                            });
+                          })
+                    ],
+                  )
+                : CongratsWidget(
+                    score: score,
+                    onTap: () {
                       setState(() {
                         questionIndex = 0;
                         score = 0;
                         isFinished = false;
+                        c = 1;
+                        selectedAnswer = null;
                       });
                     },
-                    child: const Text('Restart'),
-                  ),
-                ]
-              ]),
-        ),
+                  )),
       ),
     );
-    /*  return Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Your Score'),
-          backgroundColor: const Color.fromARGB(223, 240, 140, 83),
-          foregroundColor: const Color.fromARGB(223, 20, 22, 22),
-        ),
-        body: Center(
-          child: SizedBox(
-            width: double.infinity,
-            height: 100,
-            child: Center(
-              child: Text(
-                'Congrats! Your final score is $questionIndex / $questionIndex',
-                style: const TextStyle(
-                  decoration: TextDecoration.none,
-                  fontSize: 24,
-                  color: Color.fromARGB(255, 104, 57, 31),
-                  fontFamily: 'Times New Roma',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );*/
   }
 }
 
